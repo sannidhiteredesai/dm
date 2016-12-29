@@ -1,0 +1,41 @@
+
+Cassandra version : 2.2.8
+
+Starting cassandra server : bin/cassandra -f
+( watch the ip and port that listens to cqlsh client -> here it is 127.0.1.1 & 9042 )
+
+Starting cqlsh client ( if req. ) : bin/cqlsh 127.0.1.1 9042
+
+
+............................................................................................
+
+
+Hive Version : 0.11.0
+
+Hive metastore must use mysql instead of derby ( make changes in hive-site.xml )
+Video : https://www.youtube.com/watch?v=aOzx6UEMFCg
+
+Start hadoop daemons : start-dfs.sh
+                       start-yarn.sh
+
+Start hive metastore : hive --service metastore
+
+Start hive ( if req. ) : hive
+
+
+............................................................................................
+
+
+Presto version : presto-server-0.161
+
+Setup the etc folder properly which installation (as per steps on the presto website)
+
+Setup cassandra.properties and hive.properties (as per steps for connecting to data sources)
+
+Start presto server : cd to presto installation directory
+                      bin/launcher run
+
+Start presto client : ./presto-cli.jar --server localhost:8080 --catalog hive --schema default
+                      select * from cassandra.<keyspace-name>.<table-name>;
+                      select * from hive.<database-name>.<table-name>;
+

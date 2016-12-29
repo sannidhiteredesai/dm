@@ -1,0 +1,55 @@
+working fine with :
+spark - 1.5.2( bin hadoop 2.6)
+scala - 2.10.6
+java - 1.8.0_112
+python - 2.7.6
+cassandra - 2.2.8
+
+....................................................
+
+// Run as : bin/spark-shell --packages datastax:spark-cassandra-connector:1.5.0-s_2.10 -Ylog-classpath scalac
+// Also run the python script which generates nos.
+
+import org.apache.spark.sql
+import org.apache.spark.sql.cassandra.CassandraSQLContext
+import org.apache.spark.sql.cassandra._
+import com.datastax.spark.connector._
+
+import com.datastax.driver.core.{Session, Cluster, Host, Metadata}
+import com.datastax.spark.connector.streaming._
+import scala.collection.JavaConversions._
+
+
+import org.apache.spark.SparkConf
+import org.apache.spark.storage.StorageLevel
+import org.apache.spark.streaming.{Seconds, StreamingContext}
+
+
+//sc is already available in spark-shell where this script will be executed using load command
+val ssc = new StreamingContext(sc, Seconds(3))
+
+val lines = ssc.socketTextStream("localhost", 9998)
+val wordCounts = lines.map(number => "group"+((number.toInt)/10).toString).countByValue()
+
+def mapWithTime(rdd:org.apache.spark.rdd.RDD[(String,Long)]  ,  time:org.apache.spark.streaming.Time) = {
+	print("\n\n")	
+	print(time.milliseconds)
+	print("\n")
+	rdd.map{ case (group:String,count:Long) =>(group:String,count:Long,time.milliseconds:Long) }.saveToCassandra("retail","counts",SomeColumns("group","count","time"))
+	print("\n\n")
+}
+
+wordCounts.foreachRDD( (rdd,time) => mapWithTime(rdd,time))
+ssc.start()
+
+....................................................
+
+Change cassandra ip in cassandra.yaml to 127.0.1.1 as that is what is
+expected by spark (as seen on terminal logs)
+
+
+Cassandra details :
+
+Create keyspace : retail
+use retail;
+create table counts( group   text, count bigint, time bigint, primary key(group, time) );
